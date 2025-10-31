@@ -1,48 +1,27 @@
-from bottle import Bottle, run, request, response
 import os
+import pymysql
 
-app = Bottle()
+# ======================
+# MySQL 数据库连接设置
+# ======================
+def get_connection():
+    connection = pymysql.connect(
+        host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT")),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
+        ssl={'ssl': {}}  # Aiven 数据库需要 SSL
+    )
+    return connection
 
-# =========================
-# 允许跨域访问（部署后）
-# =========================
-@app.hook('after_request')
-def enable_cors():
-    response.headers['Access-Control-Allow-Origin'] = 'https://deployment-frontend.vercel.app'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Origin, Content-Type, Accept'
-
-# =========================
-# 首页
-# =========================
-@app.get('/')
-def home():
-    return {"message": "✅ Bottle backend is running on Render!"}
-
-# =========================
-# 测试接口
-# =========================
-@app.get('/api/test')
-def test():
-    return {"message": "✅ 后端正常工作！"}
-
-# =========================
-# 模拟登录接口
-# =========================
-@app.post('/api/login')
-def login():
-    username = request.forms.get('userName')
-    password = request.forms.get('userPw')
-
-    if username == "admin" and password == "123":
-        return {"success": True, "message": "登录成功"}
-    else:
-        return {"success": False, "message": "用户名或密码错误"}
-
-# =========================
-# 启动服务器
-# =========================
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    print(f"✅ 后端启动成功：http://0.0.0.0:{port}")
-    run(app, host='0.0.0.0', port=port, debug=True)
+# ======================
+# 启动时测试数据库连接
+# ======================
+if __name__ == "__main__":
+    try:
+        conn = get_connection()
+        print("✅ Successfully connected to Aiven MySQL!")
+        conn.close()
+    except Exception as e:
+        print("❌ Database connection failed:", e)
