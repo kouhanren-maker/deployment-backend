@@ -1,8 +1,8 @@
 import os
 import pymysql
-from flask import Flask, jsonify  # 如果你是 Bottle，我也可以帮你改成 Bottle 版本
+from bottle import Bottle, response
 
-app = Flask(__name__)
+app = Bottle()
 
 @app.route("/test-db")
 def test_db():
@@ -19,9 +19,16 @@ def test_db():
             cursor.execute("SHOW TABLES;")
             tables = [row[0] for row in cursor.fetchall()]
         connection.close()
-        return jsonify({"status": "✅ connected", "tables": tables})
-    except Exception as e:
-        return jsonify({"status": "❌ failed", "error": str(e)})
 
+        response.content_type = "application/json"
+        return {"status": "✅ connected", "tables": tables}
+
+    except Exception as e:
+        response.content_type = "application/json"
+        return {"status": "❌ failed", "error": str(e)}
+
+
+# Render 平台要求显式绑定 0.0.0.0 和端口号
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=True)
